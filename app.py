@@ -46,18 +46,26 @@ def extract(req: InvoiceRequest):
 
     vendor = ""
 
-    vendor_patterns = [
-        r"Vendor[:\-]\s*(.+)",
-        r"Supplier[:\-]\s*(.+)",
-        r"From[:\-]\s*(.+)",
-        r"Company[:\-]\s*(.+)",
-    ]
+    # Look for Acme-XXXX...
+    m = re.search(r"(Acme-[A-Za-z0-9]+(?:[^\n,]*)?)", text, re.IGNORECASE)
 
-    for pattern in vendor_patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            vendor = match.group(1).split("\n")[0].strip()
-            break
+    if m:
+        vendor = m.group(1).strip()
+    else:
+        # Fallback patterns
+        patterns = [
+            r"Vendor[:\-]\s*(.+)",
+            r"Supplier[:\-]\s*(.+)",
+            r"From[:\-]\s*(.+)",
+            r"Company[:\-]\s*(.+)",
+            r"Issued by[:\-]?\s*(.+)",
+        ]
+
+        for p in patterns:
+            m = re.search(p, text, re.IGNORECASE)
+            if m:
+                vendor = m.group(1).split("\n")[0].strip()
+                break
 
 
     currency = ""
