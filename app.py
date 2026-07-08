@@ -46,60 +46,43 @@ def extract(req: InvoiceRequest):
 
     vendor = ""
 
-    patterns = [
+    vendor_patterns = [
         r"Vendor[:\-]\s*(.+)",
+        r"Supplier[:\-]\s*(.+)",
         r"From[:\-]\s*(.+)",
-        r"Supplier[:\-]\s*(.+)"
+        r"Company[:\-]\s*(.+)",
     ]
 
-    for p in patterns:
-        m = re.search(p, text, re.IGNORECASE)
-
-        if m:
-            vendor = m.group(1).split("\n")[0].strip()
+    for pattern in vendor_patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            vendor = match.group(1).split("\n")[0].strip()
             break
 
-    # -----------------------
-    # Currency
-    # -----------------------
 
     currency = ""
+    match = re.search(r"\b(USD|EUR|GBP)\b", text, re.IGNORECASE)
+    if match:
+        currency = match.group(1).upper()
 
-    m = re.search(r"\b(USD|EUR|GBP)\b", text)
 
-    if m:
-        currency = m.group(1)
+    amount = 0.0
 
-    # -----------------------
-    # Amount
-    # -----------------------
+    match = re.search(r"(\d+(?:,\d{3})*(?:\.\d+)?)", text)
 
-    amount = 0
+    if match:
+        try:
+            amount = float(match.group(1).replace(",", ""))
+        except ValueError:
+            amount = 0.0
 
-    m = re.search(
-        r"(?:Total|Amount|Due|Total Due)[^\d]*([\d,.]+)",
-        text,
-        re.IGNORECASE
-    )
-
-    if m:
-        amount = float(
-            m.group(1).replace(",", "")
-        )
-
-    # -----------------------
-    # Date
-    # -----------------------
 
     date = ""
 
-    m = re.search(
-        r"(\d{4}-\d{2}-\d{2})",
-        text
-    )
+    match = re.search(r"\d{4}-\d{2}-\d{2}", text)
 
-    if m:
-        date = m.group(1)
+    if match:
+        date = match.group(0)
 
     return InvoiceResponse(
         vendor=vendor,
